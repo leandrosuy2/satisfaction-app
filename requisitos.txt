@@ -1,0 +1,65 @@
+Objetivo:
+Desenvolver uma aplicação web que permita aos usuários avaliar os serviços das empresas associadas a eles através de um sistema de votação simples.
+
+Fluxo da Aplicação:
+1. Tela de Login
+Acesse o sistema utilizando suas credenciais (username e password)
+
+Após autenticação bem-sucedida, você receberá:
+
+Um token JWT para autorização nas próximas requisições
+
+Informações do seu perfil, incluindo as empresas associadas
+
+2. Seleção de Empresa
+Após o login, você será direcionado para uma tela com:
+
+Um dropdown (select) contendo todas as empresas associadas ao seu usuário
+
+Um botão "Selecionar" para confirmar sua escolha
+
+3. Tela de Votação
+Ao selecionar uma empresa, você poderá:
+
+Avaliar os serviços utilizando os valores pré-definidos: "Ótimo", "Bom", "Regular" ou "Ruim"
+
+Adicionar um comentário opcional sobre o serviço (máximo 255 caracteres)
+
+Selecionar o tipo de serviço (opcional) através de um dropdown
+
+Enviar sua avaliação clicando no botão "Votar"
+
+Requisitos Técnicos:
+Utilize a API Satisfaction conforme documentação fornecida
+
+Todas as requisições (exceto login) devem incluir o token JWT no header Authorization
+
+Implemente tratamento de erros para:
+
+Credenciais inválidas
+
+Token expirado
+
+Empresas não encontradas
+
+Falhas na comunicação com a API
+
+A interface deve ser responsiva e user-friendly
+
+Observações:
+O campo de comentário é opcional
+
+O campo de tipo de serviço também é opcional
+
+Após o voto ser registrado com sucesso, exiba uma mensagem de confirmação ao usuário
+
+Considere adicionar um indicador visual (como um spinner) durante as requisições assíncronas
+
+Entregáveis:
+Código fonte da aplicação
+
+Instruções para execução local
+
+Breve documentação das decisões de implementação
+
+Este enunciado descreve o fluxo básico da aplicação. Você pode adicionar funcionalidades extras que julgar interessantes, desde que cumpra os requisitos mínimos especificados.
