@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, ImageBackground, Dimensions } from 'react-native';
+import { View, Text, TextInput, ImageBackground, Dimensions ,Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { authService } from '../services/auth';
 import { CustomButton } from '../components/CustomButton';
+import LogoVV from '../assets/LOGO-VV.png';
+
+
 import Animated, {
     FadeInDown,
     FadeIn,
@@ -69,9 +72,11 @@ export default function LoginScreen() {
                             style={{ width: Math.min(580, width - 32) }}
                         >
                             <View className="items-center mb-8 w-full px-2">
-                                <Text className="text-4xl font-bold text-[#FF5500] mb-3">
-                                    SATISFACTION
-                                </Text>
+                            <Image 
+                                source={LogoVV} 
+                                className="w-60 h-60"
+                                resizeMode="contain"
+                            />
                             </View>
 
                             <View className="w-full px-4">
