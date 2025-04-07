@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BlurView } from 'expo-blur';
 import {
     View,
     Text,
@@ -357,26 +358,36 @@ export default function VoteScreen() {
 
     return (
         <ImageBackground
-            source={{ uri: 'https://img.freepik.com/fotos-premium/empresario-tocando-e-fazendo-a-marca-para-selecionar-o-rosto-sorridente-com-cinco-estrelas-amarelas-em-fundo-preto-a-melhor-satisfacao-do-cliente-e-avaliacao-de-produto-e-servico-de-boa-qualidade_50039-2506.jpg' }}
+            source={{ uri: 'https://assets.technologyadvice.com/uploads/2023/10/Employee-Satisfaction.jpeg' }}
             style={styles.container}
             resizeMode="cover"
         >
-            <View style={styles.overlay}>
-                <SafeAreaView style={styles.voteContainer}>
-                    <Animated.View
-                        entering={FadeIn.duration(800)}
-                        style={[
-                            styles.header,
-                            isLandscape && styles.headerLandscape
-                        ]}
-                    >
+            <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center">
+            <View
+                className="bg-white/90 rounded-3xl p-4 mx-auto"
+                style={{
+                width: 620, // ou qualquer valor fixo ou responsivo
+                height: 320,
+                // maxWidth: '90%',
+                // maxHeight: '90%',
+                justifyContent: 'center',
+                }}
+            >
+                            <SafeAreaView style={styles.voteContainer}>
+                     <Animated.View
+                                                entering={FadeInDown.duration(1000).springify()}
+                                                className="bg-white/90 backdrop-blur-xl rounded-3xl p-4 items-center mx-auto"
+                                                style={{ width: Math.min(580, width - 32) }}
+                                            >
                         <Text style={[
                             styles.voteTitle,
-                            isLandscape && styles.voteTitleLandscape
+                            isLandscape && styles.voteTitleLandscape,
+                            { color: '#000' }
                         ]}>Como foi sua experiência?</Text>
                         <Text style={[
                             styles.voteSubtitle,
-                            isLandscape && styles.voteSubtitleLandscape
+                            isLandscape && styles.voteSubtitleLandscape,
+                            { color: '#000' }
                         ]}>
                             Sua opinião é muito importante para nós
                         </Text>
@@ -417,7 +428,8 @@ export default function VoteScreen() {
                                                 isSelected && {
                                                     backgroundColor: bgColor,
                                                     borderWidth: 2,
-                                                    borderColor: color
+                                                    borderColor: color,
+                                                    
                                                 }
                                             ]}
                                         >
@@ -457,6 +469,7 @@ export default function VoteScreen() {
                     </ScrollView>
                 </SafeAreaView>
             </View>
+            </BlurView>
 
             {/* Modal de comentário */}
             <CustomModal

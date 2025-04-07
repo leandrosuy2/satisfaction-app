@@ -1,7 +1,7 @@
 import { AuthResponse, LoginCredentials, Voto } from '../types/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const API_URL = 'http://192.168.100.6:3005';
+const API_URL = 'http://192.168.0.190:3005';
 
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
