@@ -88,6 +88,7 @@ const ThankYouModal = ({ visible, onClose, rating }) => {
             style={thankYouStyles.overlay}
             onPress={onClose}
         >
+            
             <TouchableOpacity activeOpacity={1} onPress={(e) => e.stopPropagation()}>
                 <Animated.View 
                     entering={SlideInUp.springify().damping(15)}
@@ -355,6 +356,20 @@ export default function VoteScreen() {
         setShowThankYouModal(false);
         router.replace('/vote');
     };
+    const handleRefresh = () => {
+        // Ex: pode recarregar dados ou resetar votação
+        console.log("Atualizar");
+      };
+      
+      const handleCloudAction = () => {
+        // Ex: poderia ser salvar em nuvem
+        console.log("Nuvem");
+      };
+      
+      const handleSettings = () => {
+        // Ex: abrir tela de configurações
+        console.log("Engrenagem");
+      };
 
     return (
         <ImageBackground
@@ -362,6 +377,19 @@ export default function VoteScreen() {
             style={styles.container}
             resizeMode="cover"
         >
+            <View style={styles.topIconsContainer}>
+            <TouchableOpacity onPress={handleRefresh}>
+                <FontAwesome name="refresh" size={30} color="#000" />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleCloudAction}>
+                <FontAwesome name="cloud" size={30} color="#000" />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={handleSettings}>
+                <FontAwesome name="cog" size={30} color="#000" />
+            </TouchableOpacity>
+            </View>
             <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center">
             <View
                 className="bg-white/90 rounded-3xl p-4 mx-auto"
@@ -695,4 +723,14 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
+    topIconsContainer: {
+        position: 'absolute',
+        top: 50,
+        left: 20,
+        right: 20,
+        zIndex: 10,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+      },
 });
