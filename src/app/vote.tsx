@@ -275,12 +275,12 @@ const AVALIACOES: Array<{
         gradient: ['#FFA500', '#FF8C00'] as const // degradê de laranja pro laranja escuro
     },
     {
-        label: 'Ruim',
-        icon: 'frown-o',
-        color: '#FF4C4C', // vermelho forte pro ícone
-        bgColor: 'rgba(255, 76, 76, 0.15)', // fundo vermelho suave
-        gradient: ['#FF4C4C', '#FF0000'] as const // degradê vermelho claro → vermelho intenso
-    },
+    label: 'Ruim',
+    icon: 'frown-o',
+    color: '#FF4C4C', // vermelho forte pro ícone
+    bgColor: 'rgba(255, 76, 76, 0.15)', // fundo vermelho suave
+    gradient: ['#FF4C4C', '#FF0000'] as const // degradê vermelho claro → vermelho intenso
+},
 ];
 
 export default function VoteScreen() {
@@ -596,7 +596,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         ...Platform.select({
             web: {
-                textShadow: '0px 2px 4px rgba(212, 72, 72, 0.3)'
+                textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)'
             }
         })
     },
@@ -646,7 +646,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 24,
-        backgroundColor: 'rgba(83, 71, 71, 0.8)',  // fundo do botao
+        backgroundColor: 'rgba(30, 30, 30, 0.8)',//mudar o backgroud do fundo do icon
         shadowColor: '#FFD700',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     voteLabel: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#FFD700', //mudar a cor da fonte do botao icon
+        color: '#FFD700',//mudar a cor da fonte do icon
         textAlign: 'center',
     },
 
