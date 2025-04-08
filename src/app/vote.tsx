@@ -256,30 +256,30 @@ const AVALIACOES: Array<{
     {
         label: 'Ótimo',
         icon: 'smile-o',
-        color: '#FFD700',
-        bgColor: 'rgba(255, 215, 0, 0.2)',
-        gradient: ['#FFD700', '#FFA500'] as const
-    },
+        color: '#2ecc71', // verde bonito pro ícone e texto
+        bgColor: 'rgba(46, 204, 113, 0.2)', // verde clarinho de fundo
+        gradient: ['#2ecc71', '#27ae60'] as const // degrade verdinho
+    }   ,
     {
         label: 'Bom',
         icon: 'thumbs-o-up',
-        color: '#FFD700',
-        bgColor: 'rgba(255, 215, 0, 0.15)',
-        gradient: ['#FFD700', '#FFA500'] as const
+        color: '#FFD700', // amarelo ouro
+        bgColor: 'rgba(255, 215, 0, 0.15)', // fundo amarelo clarinho
+        gradient: ['#FFD700', '#FFA500'] as const // degradê de amarelo pro laranja
     },
     {
         label: 'Regular',
         icon: 'meh-o',
-        color: '#FFD700',
-        bgColor: 'rgba(255, 215, 0, 0.1)',
-        gradient: ['#FFD700', '#FFA500'] as const
+        color: '#FFA500', // laranja padrão
+        bgColor: 'rgba(255, 165, 0, 0.15)', // laranja mais suave de fundo
+        gradient: ['#FFA500', '#FF8C00'] as const // degradê de laranja pro laranja escuro
     },
     {
         label: 'Ruim',
         icon: 'frown-o',
-        color: '#FFD700',
-        bgColor: 'rgba(255, 215, 0, 0.05)',
-        gradient: ['#FFD700', '#FFA500'] as const
+        color: '#FF4C4C', // vermelho forte pro ícone
+        bgColor: 'rgba(255, 76, 76, 0.15)', // fundo vermelho suave
+        gradient: ['#FF4C4C', '#FF0000'] as const // degradê vermelho claro → vermelho intenso
     },
 ];
 
@@ -382,8 +382,26 @@ export default function VoteScreen() {
                 <FontAwesome name="refresh" size={30} color="#000" />
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleCloudAction}>
+            <TouchableOpacity onPress={handleCloudAction} style={{ position: 'relative' }}>
                 <FontAwesome name="cloud" size={30} color="#000" />
+
+                {/* Badge (bolinha com número) */}
+                <View
+                    style={{
+                        position: 'absolute',
+                        top: -6,
+                        right: -6,
+                        backgroundColor: '#FFD700',
+                        borderRadius: 10,
+                        paddingHorizontal: 6,
+                        paddingVertical: 2,
+                        minWidth: 20,
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}
+                >
+                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>1</Text>
+                </View>
             </TouchableOpacity>
 
             <TouchableOpacity onPress={handleSettings}>
@@ -578,7 +596,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
         ...Platform.select({
             web: {
-                textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)'
+                textShadow: '0px 2px 4px rgba(212, 72, 72, 0.3)'
             }
         })
     },
@@ -628,7 +646,7 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         borderRadius: 24,
-        backgroundColor: 'rgba(30, 30, 30, 0.8)',
+        backgroundColor: 'rgba(83, 71, 71, 0.8)',  // fundo do botao
         shadowColor: '#FFD700',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
@@ -662,7 +680,7 @@ const styles = StyleSheet.create({
     voteLabel: {
         fontSize: 18,
         fontWeight: '600',
-        color: '#FFD700',
+        color: '#FFD700', //mudar a cor da fonte do botao icon
         textAlign: 'center',
     },
 
