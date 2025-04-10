@@ -78,5 +78,33 @@ export const authService = {
     } catch (error) {
       throw error;
     }
+  },
+   async buscarServicos(companyId: string): Promise<any> {
+    try {
+      const token = await this.getToken();
+      if (!token) {
+        throw new Error('Token não encontrado');
+      }
+  
+      const response = await fetch(`${API_URL}/companies/${companyId}/services`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        throw new Error(errorData?.message || 'Erro ao buscar serviços');
+      }
+  
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao buscar serviços:', error);
+      throw error;
+    }
   }
+
+  
 }; 

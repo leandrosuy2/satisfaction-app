@@ -35,6 +35,7 @@ import Animated, {
 import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface CustomModalProps {
     visible: boolean;
@@ -302,6 +303,32 @@ export default function VoteScreen() {
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
     const cardSize = isLandscape ? width / 5 : width * 0.6;
+    const [refeicoes, setRefeicoes] = useState([]);
+
+useEffect(() => {
+  if (showSettingsModal) {
+    const loadRefeicoes = async () => {
+      try {
+        const data = await AsyncStorage.getItem('servicos');
+        if (data) {
+          const parsed = JSON.parse(data);
+
+          const formatado = parsed.map((item: any) => ({
+            tipo: item.nome,
+            inicio: item.hora_inicio,
+            fim: item.hora_final,
+          }));
+
+          setRefeicoes(formatado);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar refeições:', error);
+      }
+    };
+
+    loadRefeicoes();
+  }
+}, [showSettingsModal]);
 
 
     
@@ -365,10 +392,35 @@ export default function VoteScreen() {
         setComentario('');       // ← limpa o comentário (opcional)
         // router.replace('/vote');
     };
-    const handleRefresh = () => {
-        // Ex: pode recarregar dados ou resetar votação
+    const handleRefresh = async (params) => {
         console.log("Atualizar");
-      };
+    
+        try {
+            // Usa o params.empresaId para buscar os serviços
+            const servicos = await authService.buscarServicos(params.empresaId);
+            console.log('✅ Serviços da empresa:', servicos);
+    
+            // Filtra apenas os campos desejados
+            const servicosFiltrados = servicos.map((servico: any) => ({
+                nome: servico.nome,
+                tipo_servico: servico.tipo_servico,
+                hora_inicio: servico.hora_inicio,
+                hora_final: servico.hora_final,
+            }));
+    
+            // Salva os dados no AsyncStorage
+            await AsyncStorage.setItem('servicos', JSON.stringify(servicosFiltrados));
+            console.log('✅ Serviços salvos no AsyncStorage!');
+    
+            // Exibe o alerta de sucesso
+            Alert.alert('Sucesso', 'Serviços Atualizados!');
+        } catch (error) {
+            console.error('Erro ao atualizar os serviços:', error);
+    
+            // Exibe o alerta de erro
+            Alert.alert('Erro', 'Ocorreu um erro ao atualizar os serviços.');
+        }
+    };
       
       const handleCloudAction = () => {
         // Ex: poderia ser salvar em nuvem
@@ -387,7 +439,7 @@ export default function VoteScreen() {
             resizeMode="cover"
         >
             <View style={styles.topIconsContainer}>
-            <TouchableOpacity onPress={handleRefresh}>
+            <TouchableOpacity onPress={() => handleRefresh(params)}>
                 <FontAwesome name="refresh" size={30} color="#000" />
             </TouchableOpacity>
 
@@ -614,12 +666,7 @@ export default function VoteScreen() {
         </ImageBackground>
     );
 }
-const refeicoes = [
-    { tipo: 'Café da manhã', inicio: '06:00', fim: '08:00' },
-    { tipo: 'Almoço', inicio: '12:00', fim: '14:00' },
-    { tipo: 'Lanche da Tarde', inicio: '16:00', fim: '16:30' },
-    { tipo: 'Jantar', inicio: '19:00', fim: '21:00' }
-  ];
+
 
 const styles = StyleSheet.create({
     container: {

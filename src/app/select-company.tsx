@@ -4,6 +4,8 @@ import { useRouter } from 'expo-router';
 import { authService } from '../services/auth';
 import { Empresa } from '../types/auth';
 import { CustomButton } from '../components/CustomButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 import Animated, { 
     FadeInDown, 
     FadeIn, 
@@ -64,25 +66,45 @@ export default function SelectCompanyScreen() {
         );
     };
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
         if (!selectedEmpresa) {
-            Alert.alert('Atenção', 'Selecione uma empresa para continuar');
-            return;
+          Alert.alert('Atenção', 'Selecione uma empresa para continuar');
+          return;
         }
-        console.log('🔍 SelectCompanyScreen: Navigating to vote with empresa:', selectedEmpresa);
+      
+        console.log('🔍 SelectCompanyScreen: Selected empresa:', selectedEmpresa);
+      
         try {
-            router.push({
-                pathname: '/vote',
-                params: { 
-                    empresaId: selectedEmpresa.id, 
-                    empresaNome: selectedEmpresa.nome 
-                }
-            });
+          // Busca serviços
+          const servicos = await authService.buscarServicos(selectedEmpresa.id);
+          console.log('✅ Serviços da empresa:', servicos);
+      
+          // Filtra apenas os campos desejados
+          const servicosFiltrados = servicos.map((servico: any) => ({
+            nome: servico.nome,
+            tipo_servico: servico.tipo_servico,
+            hora_inicio: servico.hora_inicio,
+            hora_final: servico.hora_final,
+          }));
+      
+          // Salva no AsyncStorage
+          await AsyncStorage.setItem('servicos', JSON.stringify(servicosFiltrados));
+          console.log('✅ Serviços salvos no AsyncStorage!');
+      
+          // Navega para a tela de votação
+          router.push({
+            pathname: '/vote',
+            params: { 
+              empresaId: selectedEmpresa.id, 
+              empresaNome: selectedEmpresa.nome 
+            }
+          });
         } catch (error) {
-            console.error('🔍 SelectCompanyScreen: Navigation error:', error);
-            Alert.alert('Erro', 'Erro ao navegar para a tela de votação');
+          console.error('❌ Erro ao buscar serviços ou salvar:', error);
+          Alert.alert('Erro', 'Erro ao buscar ou salvar os serviços');
         }
-    };
+      };
+      
 
     const handleLogout = async () => {
         console.log('🔍 SelectCompanyScreen: Starting logout process');
