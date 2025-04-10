@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { BlurView } from 'expo-blur';
+
+
+
 import {
     View,
     Text,
@@ -38,6 +41,9 @@ interface CustomModalProps {
     onClose: () => void;
     children: React.ReactNode;
 }
+
+const { width, height } = Dimensions.get('window');
+const isLandscape = width > height;
 
 const CustomModal = ({ visible, onClose, children }: CustomModalProps) => {
     if (!visible) return null;
@@ -292,11 +298,13 @@ export default function VoteScreen() {
     const [showModal, setShowModal] = useState(false);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
     const [showSettingsModal, setShowSettingsModal] = useState(false);
-
-
     // Usar useWindowDimensions para detectar mudanças de orientação
     const { width, height } = useWindowDimensions();
     const isLandscape = width > height;
+    const cardSize = isLandscape ? width / 5 : width * 0.6;
+
+
+    
 
     // Criar um objeto para armazenar os valores de escala para cada botão
     const scaleValues: Record<Voto['avaliacao'], SharedValue<number>> = {
@@ -461,56 +469,56 @@ export default function VoteScreen() {
 
                                 return (
                                     <Animated.View
-                                        key={label}
-                                        entering={SlideInDown.delay(index * 150)}
-                                        style={[
-                                            styles.voteOptionContainer,
-                                            isLandscape && styles.voteOptionContainerLandscape,
-                                            animatedStyle
-                                        ]}
+                                      key={label}
+                                      entering={SlideInDown.delay(index * 150)}
+                                      style={[
+                                        styles.voteOptionContainer,
+                                        isLandscape && styles.voteOptionContainerLandscape,
+                                        animatedStyle
+                                      ]}
                                     >
-                                        <View
-                                            style={[
-                                                styles.voteOption,
-                                                isSelected && {
-                                                    backgroundColor: bgColor,
-                                                    borderWidth: 2,
-                                                    borderColor: color,
-                                                    
-                                                }
-                                            ]}
+                                     
+
+                                        <Pressable
+                                        onPress={() => handleSelectRating(label as Voto['avaliacao'])}
+                                        disabled={loading}
+                                        style={({ pressed }) => ({
+                                            backgroundColor: isSelected ? bgColor : '#fff',
+                                            borderRadius: 20,
+                                            borderWidth: isSelected ? 2 : 0,
+                                            borderColor: isSelected ? color : 'transparent',
+                                            shadowColor: '#000',
+                                            shadowOffset: { width: 0, height: 4 },
+                                            shadowOpacity: 0.2,
+                                            shadowRadius: 6,
+                                            elevation: 5,
+                                            padding: 16,
+                                            marginHorizontal: 8,
+                                            width: cardSize,
+                                            height: cardSize * 1.1,
+                                            justifyContent: 'center',
+                                            alignItems: 'center',
+                                            transform: [{ scale: pressed ? 0.96 : 1 }],
+                                        })}
                                         >
-                                            <Pressable
-                                                onPress={() => handleSelectRating(label as Voto['avaliacao'])}
-                                                disabled={loading}
-                                                style={({ pressed }) => [
-                                                    styles.voteButton,
-                                                    pressed && styles.pressed
-                                                ]}
-                                            >
-                                                <LinearGradient
-                                                    colors={isSelected ? gradient : ['transparent', 'transparent']}
-                                                    style={[
-                                                        styles.iconContainer,
-                                                        isLandscape && styles.iconContainerLandscape
-                                                    ]}
-                                                >
-                                                    <FontAwesome
-                                                        name={icon}
-                                                        size={isLandscape ? 36 : 48}
-                                                        color={isSelected ? '#FFF' : color}
-                                                    />
-                                                </LinearGradient>
-                                                <Text style={[
-                                                    styles.voteLabel,
-                                                    isSelected && { color: '#FFFFFF' }
-                                                ]}>
-                                                    {label}
-                                                </Text>
-                                            </Pressable>
-                                        </View>
+                                        <FontAwesome
+                                          name={icon}
+                                          size={48}
+                                          color={isSelected ? '#fff' : color}
+                                        />
+                                        <Text
+                                          style={{
+                                            color: isSelected ? '#fff' : '#000',
+                                            fontWeight: 'bold',
+                                            fontSize: 16,
+                                            marginTop: 12,
+                                          }}
+                                        >
+                                          {label}
+                                        </Text>
+                                      </Pressable>
                                     </Animated.View>
-                                );
+                                  );
                             })}
                         </View>
                     </ScrollView>
@@ -689,17 +697,18 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     voteOption: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 24,
-        backgroundColor: 'rgba(30, 30, 30, 0.8)',//mudar o backgroud do fundo do icon
-        shadowColor: '#FFD700',
+        width: 120,
+        height: 140,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginHorizontal: 8,
+        shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-        overflow: 'hidden',
-    },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 5,
+      },
     voteButton: {
         flex: 1,
         alignItems: 'center',
@@ -715,7 +724,7 @@ const styles = StyleSheet.create({
         borderRadius: 40,
         alignItems: 'center',
         justifyContent: 'center',
-        marginBottom: 12,
+        marginBottom: 30,
     },
     iconContainerLandscape: {
         width: 60,
