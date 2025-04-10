@@ -291,6 +291,8 @@ export default function VoteScreen() {
     const [loading, setLoading] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showThankYouModal, setShowThankYouModal] = useState(false);
+    const [showSettingsModal, setShowSettingsModal] = useState(false);
+
 
     // Usar useWindowDimensions para detectar mudanças de orientação
     const { width, height } = useWindowDimensions();
@@ -305,20 +307,17 @@ export default function VoteScreen() {
     };
 
     const handleSelectRating = (opcao: Voto['avaliacao']) => {
+        if (loading) return; // Evita múltiplos envios
         setAvaliacao(opcao);
-
-        // Animar o botão selecionado
+    
         scaleValues[opcao].value = withSequence(
             withSpring(1.2, { damping: 12 }),
             withSpring(1)
         );
-
-        // Verificação simples e direta
+    
         if (opcao === 'Regular' || opcao === 'Ruim') {
-            // Abrir modal imediatamente
             setShowModal(true);
         } else {
-            // Enviar voto para Ótimo e Bom
             enviarVoto(opcao);
         }
     };
@@ -354,7 +353,9 @@ export default function VoteScreen() {
 
     const handleCloseThankYouModal = () => {
         setShowThankYouModal(false);
-        router.replace('/vote');
+        setAvaliacao(null);      // ← limpa o botão selecionado
+        setComentario('');       // ← limpa o comentário (opcional)
+        // router.replace('/vote');
     };
     const handleRefresh = () => {
         // Ex: pode recarregar dados ou resetar votação
@@ -404,7 +405,7 @@ export default function VoteScreen() {
                 </View>
             </TouchableOpacity>
 
-            <TouchableOpacity onPress={handleSettings}>
+            <TouchableOpacity onPress={() => setShowSettingsModal(true)}>
                 <FontAwesome name="cog" size={30} color="#000" />
             </TouchableOpacity>
             </View>
@@ -563,9 +564,54 @@ export default function VoteScreen() {
                 onClose={handleCloseThankYouModal}
                 rating={avaliacao}
             />
+
+            
+
+<CustomModal
+    visible={showSettingsModal}
+    onClose={() => setShowSettingsModal(false)}
+>
+    <Text style={styles.modalTitle}>Configurações</Text>
+
+        <View style={{ marginTop: 20 }}>
+            <View style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#FFD700' }}>
+                <Text style={styles.cellHeader}>Refeição</Text>
+                <Text style={styles.cellHeader}>Inicio</Text>
+                <Text style={styles.cellHeader}>Fim</Text>
+            </View>
+
+            {/* Linhas com os dados reais */}
+            {refeicoes.map((item, idx) => (
+                <View key={idx} style={{ flexDirection: 'row', borderBottomWidth: 1, borderColor: '#ccc' }}>
+                <Text style={styles.cell}>{item.tipo}</Text>
+                <Text style={styles.cell}>{item.inicio}</Text>
+                <Text style={styles.cell}>{item.fim}</Text>
+                </View>
+            ))}
+              <TouchableOpacity
+        onPress={() => setShowSettingsModal(false)}
+        style={{
+            marginTop: 20,
+            alignSelf: 'center',
+            backgroundColor: '#FFD700',
+            paddingHorizontal: 24,
+            paddingVertical: 10,
+            borderRadius: 10,
+        }}
+    >
+        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 16 }}>OK</Text>
+    </TouchableOpacity>
+        </View>
+    </CustomModal>
         </ImageBackground>
     );
 }
+const refeicoes = [
+    { tipo: 'Café da manhã', inicio: '06:00', fim: '08:00' },
+    { tipo: 'Almoço', inicio: '12:00', fim: '14:00' },
+    { tipo: 'Lanche da Tarde', inicio: '16:00', fim: '16:30' },
+    { tipo: 'Jantar', inicio: '19:00', fim: '21:00' }
+  ];
 
 const styles = StyleSheet.create({
     container: {
@@ -751,4 +797,18 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
       },
+      // ... já existentes
+    cellHeader: {
+        flex: 1,
+        fontWeight: 'bold',
+        padding: 8,
+        color: '#FFD700',
+        textAlign: 'center'
+    },
+    cell: {
+        flex: 1,
+        padding: 8,
+        color: '#FFF',
+        textAlign: 'center'
+    },
 });
