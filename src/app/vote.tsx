@@ -308,6 +308,8 @@ export default function VoteScreen() {
     const [refeicoes, setRefeicoes] = useState([]);
     const [votosPendentes, setVotosPendentes] = useState(0);
     const [servicoAtualNome, setServicoAtualNome] = useState<string>(''); 
+    const [proximoServico, setProximoServico] = useState<string>(''); 
+    const [tempoRestante, setTempoRestante] = useState<number>(0); 
 
     // const state = await NetInfo.fetch();
 
@@ -419,6 +421,41 @@ useEffect(() => {
             setServicoAtualNome('Intervalo');
         }
     };
+
+    const encontrarProximoServico = async () => {
+        try {
+            const agora = new Date();
+            const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    
+            const servicosString = await AsyncStorage.getItem('servicos');
+            if (servicosString) {
+                const servicos = JSON.parse(servicosString);
+    
+                const futuros = servicos
+                    .map((s: any) => {
+                        const [hInicio, mInicio] = s.hora_inicio.split(':').map(Number);
+                        const totalMin = hInicio * 60 + mInicio;
+                        return { ...s, inicioMin: totalMin };
+                    })
+                    .filter((s: any) => s.inicioMin > minutosAgora)
+                    .sort((a: any, b: any) => a.inicioMin - b.inicioMin);
+    
+                if (futuros.length > 0) {
+                    const proximo = futuros[0];
+                    const tempo = (proximo.inicioMin - minutosAgora) * 60; // em segundos
+                    setProximoServico(proximo.nome);
+                    setTempoRestante(tempo);
+                } else {
+                    setProximoServico('Nenhum serviço restante hoje');
+                    setTempoRestante(0);
+                }
+            }
+        } catch (error) {
+            console.error('Erro ao encontrar próximo serviço:', error);
+            setProximoServico('Erro ao buscar');
+        }
+    };
+    
     useEffect(() => {
         if (!showThankYouModal) {
           atualizarVotosPendentes();
@@ -427,7 +464,30 @@ useEffect(() => {
       useEffect(() => {
         determinarServicoAtual();
     }, []);
+    useEffect(() => {
+        if (servicoAtualNome === 'Intervalo') {
+            encontrarProximoServico();
+        }
+    }, [servicoAtualNome]);
+    
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (tempoRestante > 0) {
+            interval = setInterval(() => {
+                setTempoRestante(prev => Math.max(prev - 1, 0));
+            }, 1000);
+        }
+        return () => clearInterval(interval);
+    }, [tempoRestante]);
 
+    const formatarTempo = (segundos: number): string => {
+        const h = Math.floor(segundos / 3600);
+        const m = Math.floor((segundos % 3600) / 60);
+        const s = segundos % 60;
+        return `${h.toString().padStart(2, '0')}:${m
+            .toString()
+            .padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
     
 
     // Criar um objeto para armazenar os valores de escala para cada botão
@@ -567,6 +627,7 @@ useEffect(() => {
     
             // 🔥 CHAMA AQUI DEPOIS DE ATUALIZAR
             await determinarServicoAtual();
+            await encontrarProximoServico();     // ✅ atualiza relógio e nome do próximo
     
             Alert.alert('Sucesso', 'Serviços Atualizados!');
         } catch (error) {
@@ -728,27 +789,45 @@ useEffect(() => {
             <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center" style={{
                 display: servicoAtualNome === 'Intervalo' ? 'flex' : 'none',
             }}>
-                    <View
+                <View
                     className="bg-white/90 rounded-3xl p-4 mx-auto"
                     style={{
-                    width: 620,
-                    height: 320,
-                    justifyContent: 'center', // centro vertical
-                    alignItems: 'center',     // centro horizontal
-                    borderRadius: 30,
-                    padding: 24,
+                        width: 620,
+                        height: 320,
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        borderRadius: 30,
+                        padding: 24,
                     }}
                 >
                     <Text style={{
-                    color: '#FF0000',
-                    fontSize: 40,
-                    fontWeight: 'bold',
-                    textAlign: 'center', // centraliza dentro do próprio Text
+                        color: '#FF0000',
+                        fontSize: 40,
+                        fontWeight: 'bold',
+                        textAlign: 'center',
+                        marginBottom: 12,
                     }}>
-                    {servicoAtualNome}
+                        {servicoAtualNome}
+                    </Text>
+
+                    <Text style={{
+                        fontSize: 32,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        marginBottom: 8,
+                    }}>
+                        {formatarTempo(tempoRestante)}
+                    </Text>
+
+                    <Text style={{
+                        fontSize: 18,
+                        color: '#333',
+                        textAlign: 'center',
+                    }}>
+                        Próximo serviço: <Text style={{ fontWeight: 'bold' }}>{proximoServico}</Text>
                     </Text>
                 </View>
-                </BlurView>
+            </BlurView>
 
             {/* Modal de comentário */}
             <CustomModal
