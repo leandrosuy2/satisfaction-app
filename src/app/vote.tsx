@@ -366,6 +366,16 @@ useEffect(() => {
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        determinarServicoAtual(); // roda logo no início
+    
+        const interval = setInterval(() => {
+            determinarServicoAtual(); // verifica frequentemente
+        }, 5000); // 🔁 a cada 5 segundos
+    
+        return () => clearInterval(interval); // limpa quando sai da tela
+    }, []);
+
 
     const atualizarVotosPendentes = async () => {
         try {
@@ -615,7 +625,10 @@ useEffect(() => {
                 <FontAwesome name="cog" size={30} color="#000" />
             </TouchableOpacity>
             </View>
-            <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center">
+            
+            <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center"   style={{
+            display: servicoAtualNome === 'Intervalo' ? 'none' : 'flex',
+        }}>
             <View
                 className="bg-white/90 rounded-3xl p-4 mx-auto"
                 style={{
@@ -711,6 +724,31 @@ useEffect(() => {
                 </SafeAreaView>
             </View>
             </BlurView>
+            
+            <BlurView intensity={15} className="flex-1 bg-black/40 justify-center items-center" style={{
+                display: servicoAtualNome === 'Intervalo' ? 'flex' : 'none',
+            }}>
+                    <View
+                    className="bg-white/90 rounded-3xl p-4 mx-auto"
+                    style={{
+                    width: 620,
+                    height: 320,
+                    justifyContent: 'center', // centro vertical
+                    alignItems: 'center',     // centro horizontal
+                    borderRadius: 30,
+                    padding: 24,
+                    }}
+                >
+                    <Text style={{
+                    color: '#FF0000',
+                    fontSize: 40,
+                    fontWeight: 'bold',
+                    textAlign: 'center', // centraliza dentro do próprio Text
+                    }}>
+                    {servicoAtualNome}
+                    </Text>
+                </View>
+                </BlurView>
 
             {/* Modal de comentário */}
             <CustomModal
