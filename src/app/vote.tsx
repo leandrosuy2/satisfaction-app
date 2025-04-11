@@ -707,6 +707,7 @@ useEffect(() => {
                             </View>
 
                     </ScrollView>
+                    
                 </SafeAreaView>
             </View>
             </BlurView>
