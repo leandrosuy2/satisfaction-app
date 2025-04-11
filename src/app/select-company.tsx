@@ -5,6 +5,8 @@ import { authService } from '../services/auth';
 import { Empresa } from '../types/auth';
 import { CustomButton } from '../components/CustomButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useWindowDimensions } from 'react-native';
+
 
 import Animated, { 
     FadeInDown, 
@@ -28,12 +30,48 @@ export default function SelectCompanyScreen() {
     const [empresas, setEmpresas] = useState<Empresa[]>([]);
     const [selectedEmpresa, setSelectedEmpresa] = useState<Empresa | null>(null);
     const [loading, setLoading] = useState(true);
+    const { width, height } = useWindowDimensions();
+        const isLandscape = width > height;
     const scale = useSharedValue(1);
 
     useEffect(() => {
         console.log('🔍 SelectCompanyScreen: Component mounted');
         console.log('🔍 Router object:', router);
         loadEmpresas();
+    }, []);
+
+
+
+    useEffect(() => {
+        const verificarDadosLocais = async () => {
+            try {
+                const servicosSalvos = await AsyncStorage.getItem('servicos');
+                if (servicosSalvos) {
+                    const empresaId = await AsyncStorage.getItem('empresa_id');
+                    const empresaNome = await AsyncStorage.getItem('empresa_nome');
+    
+                    if (empresaId && empresaNome) {
+                        console.log('🔄 Dados locais encontrados, redirecionando...');
+                        router.replace({
+                            pathname: '/vote',
+                            params: {
+                                empresaId,
+                                empresaNome
+                            }
+                        });
+                        return;
+                    }
+                }
+    
+                // Carrega empresas se não tem serviços salvos
+                loadEmpresas();
+            } catch (error) {
+                console.error('Erro ao verificar AsyncStorage:', error);
+                loadEmpresas();
+            }
+        };
+    
+        verificarDadosLocais();
     }, []);
 
     const loadEmpresas = async () => {
@@ -89,6 +127,9 @@ export default function SelectCompanyScreen() {
       
           // Salva no AsyncStorage
           await AsyncStorage.setItem('servicos', JSON.stringify(servicosFiltrados));
+          // Salva ID e nome da empresa
+            await AsyncStorage.setItem('empresa_id', selectedEmpresa.id);
+            await AsyncStorage.setItem('empresa_nome', selectedEmpresa.nome);
           console.log('✅ Serviços salvos no AsyncStorage!');
       
           // Navega para a tela de votação
@@ -163,14 +204,23 @@ export default function SelectCompanyScreen() {
                 </View>
 
                 <View className="flex-1 bg-white rounded-t-3xl -mt-6 shadow-lg">
-                    <ScrollView 
-                        className="flex-1 px-4 pt-6"
-                        showsVerticalScrollIndicator={false}
+                <ScrollView 
+                    style={{ 
+                        paddingHorizontal: isLandscape ? 80 : 20, 
+                        paddingTop: 24 
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{
+                        alignItems: isLandscape ? 'center' : 'stretch',
+                        justifyContent: 'center',
+                    }}
                     >
                         {empresas.map((empresa, index) => (
                             <TouchableOpacity
                                 key={empresa.id}
                                 style={{
+                                    width: isLandscape ? width * 0.5 : '100%',
+                                    alignSelf: 'center',
                                     marginBottom: 16,
                                     borderRadius: 16,
                                     overflow: 'hidden',
@@ -181,7 +231,7 @@ export default function SelectCompanyScreen() {
                                     shadowOpacity: 0.2,
                                     shadowRadius: 4,
                                     elevation: 3,
-                                }}
+                                  }}
                                 onPress={() => handleSelectEmpresa(empresa)}
                             >
                                 <View style={{ padding: 16 }}>

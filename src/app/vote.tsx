@@ -36,6 +36,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
+
 
 interface CustomModalProps {
     visible: boolean;
@@ -304,6 +306,12 @@ export default function VoteScreen() {
     const isLandscape = width > height;
     const cardSize = isLandscape ? width / 5 : width * 0.6;
     const [refeicoes, setRefeicoes] = useState([]);
+    const [votosPendentes, setVotosPendentes] = useState(0);
+    const [servicoAtualNome, setServicoAtualNome] = useState<string>(''); 
+
+    // const state = await NetInfo.fetch();
+
+
 
 useEffect(() => {
   if (showSettingsModal) {
@@ -314,7 +322,7 @@ useEffect(() => {
           const parsed = JSON.parse(data);
 
           const formatado = parsed.map((item: any) => ({
-            tipo: item.nome,
+            tipo: item.nome,            
             inicio: item.hora_inicio,
             fim: item.hora_final,
           }));
@@ -330,6 +338,85 @@ useEffect(() => {
   }
 }, [showSettingsModal]);
 
+    // 🔌 Verifica e reenvia votos pendentes ao reconectar
+    useEffect(() => {
+        const unsubscribe = NetInfo.addEventListener(async state => {
+            if (state.isConnected) {
+                const pendentesStr = await AsyncStorage.getItem('votos_pendentes');
+                const pendentes = pendentesStr ? JSON.parse(pendentesStr) : [];
+    
+                if (pendentes.length > 0) {
+                    console.log('📡 Internet voltou! Enviando votos pendentes...');
+    
+                    for (const voto of pendentes) {
+                        try {
+                            await authService.enviarVoto(voto);
+                            console.log('✅ Voto reenviado:', voto);
+                        } catch (e) {
+                            console.log('❌ Erro ao reenviar voto:', voto);
+                        }
+                    }
+    
+                    await AsyncStorage.removeItem('votos_pendentes');
+                    await atualizarVotosPendentes(); // 👈 MANTÉM ESTE COM O CONTADOR
+                }
+            }
+        });
+    
+        return () => unsubscribe();
+    }, []);
+
+
+    const atualizarVotosPendentes = async () => {
+        try {
+            const pendentesStr = await AsyncStorage.getItem('votos_pendentes');
+            const pendentes = pendentesStr ? JSON.parse(pendentesStr) : [];
+            setVotosPendentes(pendentes.length);
+        } catch (error) {
+            console.error('Erro ao contar votos pendentes:', error);
+            setVotosPendentes(0);
+        }
+    };
+
+    const determinarServicoAtual = async () => {
+        try {
+            const agora = new Date();
+            const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    
+            const servicosString = await AsyncStorage.getItem('servicos');
+            if (servicosString) {
+                const servicos = JSON.parse(servicosString);
+    
+                const servicoEmAndamento = servicos.find((servico: any) => {
+                    const [hInicio, mInicio] = servico.hora_inicio.split(':').map(Number);
+                    const [hFim, mFim] = servico.hora_final.split(':').map(Number);
+                    const inicioMin = hInicio * 60 + mInicio;
+                    const fimMin = hFim * 60 + mFim;
+    
+                    return minutosAgora >= inicioMin && minutosAgora <= fimMin;
+                });
+    
+                if (servicoEmAndamento) {
+                    setServicoAtualNome(servicoEmAndamento.nome);
+                } else {
+                    setServicoAtualNome('Intervalo');
+                }
+            } else {
+                setServicoAtualNome('Intervalo');
+            }
+        } catch (error) {
+            console.error('Erro ao determinar serviço atual:', error);
+            setServicoAtualNome('Intervalo');
+        }
+    };
+    useEffect(() => {
+        if (!showThankYouModal) {
+          atualizarVotosPendentes();
+        }
+      }, [showThankYouModal]);
+      useEffect(() => {
+        determinarServicoAtual();
+    }, []);
 
     
 
@@ -359,25 +446,84 @@ useEffect(() => {
 
     const enviarVoto = async (opcao: Voto['avaliacao'], comentarioTexto?: string) => {
         if (loading) return;
-
+    
+        setLoading(true);
+    
         try {
-            setLoading(true);
-            await authService.enviarVoto({
+            const agora = new Date();
+            const minutosAgora = agora.getHours() * 60 + agora.getMinutes();
+    
+            const servicosString = await AsyncStorage.getItem('servicos');
+            let idTipoServico: string | undefined;
+    
+            if (servicosString) {
+                const servicos = JSON.parse(servicosString);
+    
+                const servicoAtual = servicos.find((servico: any) => {
+                    const [hInicio, mInicio] = servico.hora_inicio.split(':').map(Number);
+                    const [hFim, mFim] = servico.hora_final.split(':').map(Number);
+                    const inicioMin = hInicio * 60 + mInicio;
+                    const fimMin = hFim * 60 + mFim;
+    
+                    return minutosAgora >= inicioMin && minutosAgora <= fimMin;
+                });
+    
+                if (servicoAtual) {
+                    idTipoServico = servicoAtual.tipo_servico;
+                }
+            }
+    
+            const votoData = {
                 id_empresa: params.empresaId,
                 avaliacao: opcao,
                 comentario: comentarioTexto,
-                id_tipo_servico: undefined // Optional field
-            });
-
-            // Mostrar modal de agradecimento em vez do Alert
+                id_tipo_servico: idTipoServico,
+            };
+    
+            let conectado = false;
+    
+            try {
+                const state = await NetInfo.fetch();
+                conectado = state.isConnected ?? false;
+            } catch (err) {
+                console.warn('Falha ao verificar conexão. Assumindo offline.');
+            }
+    
+            if (conectado) {
+                console.log('🟢 Conectado! Enviando voto...');
+                await authService.enviarVoto(votoData);
+            } else {
+                console.log('🔴 Offline. Salvando voto local...');
+                await salvarVotoLocal(votoData);
+            }
+    
             setShowThankYouModal(true);
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível registrar sua avaliação. Por favor, tente novamente.');
             console.error('Erro ao enviar voto:', error);
+            await salvarVotoLocal({
+                id_empresa: params.empresaId,
+                avaliacao: opcao,
+                comentario: comentarioTexto,
+            });
+            Alert.alert('Offline', 'Seu voto foi salvo e será enviado quando a internet voltar.');
         } finally {
             setLoading(false);
         }
     };
+    const salvarVotoLocal = async (votoData) => {
+        try {
+            const pendentesStr = await AsyncStorage.getItem('votos_pendentes');
+            const pendentes = pendentesStr ? JSON.parse(pendentesStr) : [];
+            pendentes.push(votoData);
+            await AsyncStorage.setItem('votos_pendentes', JSON.stringify(pendentes));
+            await atualizarVotosPendentes();
+            console.log('💾 Voto salvo localmente com sucesso.');
+        } catch (e) {
+            console.error('❌ Falha ao salvar voto local:', e);
+        }
+    };  
+  
+
 
     const handleEnviarComentario = () => {
         if (!avaliacao) return;
@@ -396,11 +542,9 @@ useEffect(() => {
         console.log("Atualizar");
     
         try {
-            // Usa o params.empresaId para buscar os serviços
             const servicos = await authService.buscarServicos(params.empresaId);
             console.log('✅ Serviços da empresa:', servicos);
     
-            // Filtra apenas os campos desejados
             const servicosFiltrados = servicos.map((servico: any) => ({
                 nome: servico.nome,
                 tipo_servico: servico.tipo_servico,
@@ -408,16 +552,15 @@ useEffect(() => {
                 hora_final: servico.hora_final,
             }));
     
-            // Salva os dados no AsyncStorage
             await AsyncStorage.setItem('servicos', JSON.stringify(servicosFiltrados));
             console.log('✅ Serviços salvos no AsyncStorage!');
     
-            // Exibe o alerta de sucesso
+            // 🔥 CHAMA AQUI DEPOIS DE ATUALIZAR
+            await determinarServicoAtual();
+    
             Alert.alert('Sucesso', 'Serviços Atualizados!');
         } catch (error) {
             console.error('Erro ao atualizar os serviços:', error);
-    
-            // Exibe o alerta de erro
             Alert.alert('Erro', 'Ocorreu um erro ao atualizar os serviços.');
         }
     };
@@ -446,23 +589,26 @@ useEffect(() => {
             <TouchableOpacity onPress={handleCloudAction} style={{ position: 'relative' }}>
                 <FontAwesome name="cloud" size={30} color="#000" />
 
-                {/* Badge (bolinha com número) */}
-                <View
-                    style={{
-                        position: 'absolute',
-                        top: -6,
-                        right: -6,
-                        backgroundColor: '#FFD700',
-                        borderRadius: 10,
-                        paddingHorizontal: 6,
-                        paddingVertical: 2,
-                        minWidth: 20,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}
-                >
-                    <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>1</Text>
-                </View>
+                {votosPendentes > 0 && (
+                    <View
+                        style={{
+                            position: 'absolute',
+                            top: -6,
+                            right: -6,
+                            backgroundColor: '#FFD700',
+                            borderRadius: 10,
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                            minWidth: 20,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 12 }}>
+                            {votosPendentes}
+                        </Text>
+                    </View>
+                )}
             </TouchableOpacity>
 
             <TouchableOpacity onPress={() => setShowSettingsModal(true)}>
@@ -486,6 +632,10 @@ useEffect(() => {
                                                 className="bg-white/90 backdrop-blur-xl rounded-3xl p-4 items-center mx-auto"
                                                 style={{ width: Math.min(580, width - 32) }}
                                             >
+                                       <Text style={{ color: '#FF0000', fontSize: 40, fontWeight: 'bold' }}>
+                                        {servicoAtualNome}
+                                    </Text>
+
                         <Text style={[
                             styles.voteTitle,
                             isLandscape && styles.voteTitleLandscape,
@@ -507,72 +657,55 @@ useEffect(() => {
                         ]}
                         showsVerticalScrollIndicator={false}
                     >
-                        <View style={[
-                            styles.voteOptions,
-                            isLandscape && styles.voteOptionsLandscape
-                        ]}>
-                            {AVALIACOES.map(({ label, icon, color, bgColor, gradient }, index) => {
+                        <View style={styles.voteOptions}>
+                            {AVALIACOES.map(({ label, icon, color, bgColor }, index) => {
                                 const isSelected = avaliacao === label;
-
-                                // Usar o valor de escala específico para este botão
                                 const animatedStyle = useAnimatedStyle(() => ({
-                                    transform: [{ scale: scaleValues[label].value }]
+                                transform: [{ scale: scaleValues[label].value }]
                                 }));
 
                                 return (
-                                    <Animated.View
-                                      key={label}
-                                      entering={SlideInDown.delay(index * 150)}
-                                      style={[
-                                        styles.voteOptionContainer,
-                                        isLandscape && styles.voteOptionContainerLandscape,
-                                        animatedStyle
-                                      ]}
+                                <Animated.View
+                                    key={label}
+                                    style={[styles.voteOptionContainer, animatedStyle]}
+                                    entering={SlideInDown.delay(index * 100)}
+                                >
+                                    <Pressable
+                                    onPress={() => handleSelectRating(label)}
+                                    disabled={loading}
+                                    style={({ pressed }) => ({
+                                        backgroundColor: isSelected ? bgColor : '#fff',
+                                        borderRadius: 20,
+                                        borderWidth: isSelected ? 2 : 0,
+                                        borderColor: isSelected ? color : 'transparent',
+                                        shadowColor: '#000',
+                                        shadowOffset: { width: 0, height: 4 },
+                                        shadowOpacity: 0.2,
+                                        shadowRadius: 6,
+                                        elevation: 5,
+                                        padding: 16,
+                                        justifyContent: 'center',
+                                        alignItems: 'center',
+                                        transform: [{ scale: pressed ? 0.96 : 1 }],
+                                        width: 140,
+                                        height: 140,
+                                    })}
                                     >
-                                     
-
-                                        <Pressable
-                                        onPress={() => handleSelectRating(label as Voto['avaliacao'])}
-                                        disabled={loading}
-                                        style={({ pressed }) => ({
-                                            backgroundColor: isSelected ? bgColor : '#fff',
-                                            borderRadius: 20,
-                                            borderWidth: isSelected ? 2 : 0,
-                                            borderColor: isSelected ? color : 'transparent',
-                                            shadowColor: '#000',
-                                            shadowOffset: { width: 0, height: 4 },
-                                            shadowOpacity: 0.2,
-                                            shadowRadius: 6,
-                                            elevation: 5,
-                                            padding: 16,
-                                            marginHorizontal: 8,
-                                            width: cardSize,
-                                            height: cardSize * 1.1,
-                                            justifyContent: 'center',
-                                            alignItems: 'center',
-                                            transform: [{ scale: pressed ? 0.96 : 1 }],
-                                        })}
-                                        >
-                                        <FontAwesome
-                                          name={icon}
-                                          size={48}
-                                          color={isSelected ? '#fff' : color}
-                                        />
-                                        <Text
-                                          style={{
-                                            color: isSelected ? '#fff' : '#000',
-                                            fontWeight: 'bold',
-                                            fontSize: 16,
-                                            marginTop: 12,
-                                          }}
-                                        >
-                                          {label}
-                                        </Text>
-                                      </Pressable>
-                                    </Animated.View>
-                                  );
+                                    <FontAwesome name={icon} size={42} color={isSelected ? '#fff' : color} />
+                                    <Text style={{
+                                        color: isSelected ? '#fff' : '#000',
+                                        fontWeight: 'bold',
+                                        fontSize: 16,
+                                        marginTop: 8,
+                                    }}>
+                                        {label}
+                                    </Text>
+                                    </Pressable>
+                                </Animated.View>
+                                );
                             })}
-                        </View>
+                            </View>
+
                     </ScrollView>
                 </SafeAreaView>
             </View>
@@ -721,10 +854,12 @@ const styles = StyleSheet.create({
     },
     voteOptions: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        justifyContent: 'center',
-        gap: 20,
-    },
+        flexWrap: 'nowrap',
+        justifyContent: 'space-around',
+        alignItems: 'center',
+        gap: 12,
+        marginTop: 16,
+      },
     voteOptionsLandscape: {
         flexDirection: 'row',
         flexWrap: 'nowrap',
@@ -732,11 +867,12 @@ const styles = StyleSheet.create({
         gap: 10,
     },
     voteOptionContainer: {
-        width: '45%',
-        maxWidth: 180,
+        flex: 1,
+        maxWidth: 160, // ou ajuste conforme sua necessidade
         aspectRatio: 1,
-        padding: 10,
-    },
+        justifyContent: 'center',
+        alignItems: 'center',
+      },
     voteOptionContainerLandscape: {
         width: '23%',
         maxWidth: 150,
