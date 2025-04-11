@@ -469,6 +469,11 @@ useEffect(() => {
             encontrarProximoServico();
         }
     }, [servicoAtualNome]);
+    useEffect(() => {
+        if (tempoRestante === 0 && servicoAtualNome === 'Intervalo') {
+            encontrarProximoServico(); // 🔁 atualiza pro próximo serviço do dia
+        }
+    }, [tempoRestante, servicoAtualNome]);
     
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -819,12 +824,10 @@ useEffect(() => {
                         {formatarTempo(tempoRestante)}
                     </Text>
 
-                    <Text style={{
-                        fontSize: 18,
-                        color: '#333',
-                        textAlign: 'center',
-                    }}>
-                        Próximo serviço: <Text style={{ fontWeight: 'bold' }}>{proximoServico}</Text>
+                    <Text style={{ fontSize: 18, color: '#333', textAlign: 'center' }}>
+                    {proximoServico === 'Nenhum serviço restante hoje'
+                        ? 'Todos os serviços de hoje já foram encerrados.'
+                        : `Próximo serviço: ${proximoServico}`}
                     </Text>
                 </View>
             </BlurView>
