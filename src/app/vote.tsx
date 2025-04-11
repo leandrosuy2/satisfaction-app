@@ -635,7 +635,7 @@ useEffect(() => {
                                        <Text style={{ color: '#FF0000', fontSize: 40, fontWeight: 'bold' }}>
                                         {servicoAtualNome}
                                     </Text>
-
+                    
                         <Text style={[
                             styles.voteTitle,
                             isLandscape && styles.voteTitleLandscape,
